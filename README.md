@@ -123,13 +123,18 @@ Security notes:
  2. Copy the public key (`/tmp/faceit_deploy_key.pub`) to the repository Settings → Deploy keys → Add deploy key. Give it read access.
  
  3. Add the private key (`/tmp/faceit_deploy_key`) as a repository secret named `REPO_SSH_PRIVATE_KEY`.
- 
-4. The workflow `.github/workflows/deploy-to-regru-ssh.yml` will, if `REPO_SSH_PRIVATE_KEY` is present, copy the private key to the server and configure `~/.ssh/config` so the server uses that key when cloning `github.com`.
+
+5. In GitHub repository Settings → Secrets, add the secret `REPO_SSH_PRIVATE_KEY` and paste the **private** key contents.
 
 Notes:
-- The private key is stored only in GitHub Secrets and transmitted by the Actions runner to the VPS during deployment; it is placed at `~/.ssh/repo_deploy_key` on the VPS and used only for clone/pull operations.
-- If you prefer not to transmit the private key from CI to the server, you can instead add the public key to the server's `~/.ssh/authorized_keys` for a dedicated deploy user and keep the private key in the CI only.
 
+- The workflow will copy the private key to the VPS into `/home/<deploy>/.ssh/repo_deploy_key` and configure an SSH `Host github.com` entry so that `git clone git@github.com:owner/repo.git` uses that key. The key is not stored permanently by the workflow (it is moved into the deploy user's `~/.ssh`) and permissions are set to `600`.
+- For extra safety, prefer adding the public key as a repository Deploy key (Settings → Deploy keys) and keep the private key in GitHub Secrets with `read` access only in Actions.
+- If you prefer the server to manage its own deploy key (instead of transferring from CI), follow these steps on the server:
+
+	- Generate key on the server: `ssh-keygen -t ed25519 -f ~/.ssh/repo_deploy_key -N ""`
+	- Copy the public key (`~/.ssh/repo_deploy_key.pub`) into Repo Settings → Deploy keys.
+	- Then the workflow will automatically use SSH cloning without transferring the key from CI.
 
 
 Ubuntu setup script
