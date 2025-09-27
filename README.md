@@ -116,7 +116,32 @@ Security notes:
 - Use a dedicated, least-privileged deploy user rather than `root` when possible.
 - Consider restricting the SSH key to only allow from GitHub Actions IPs or use a separate CI deploy key.
 
-If you want, I can also:
+ If you want, I can also:
+ 
+ Deploy key (private repo) instructions
+ 
+ If your repository is private, the recommended approach is to create a repository Deploy key and let the VPS use it to `git clone git@github.com:owner/repo.git`.
+ 
+ 1. On your local machine, create a new SSH key pair for deploy:
+ 
+ ```bash
+ ssh-keygen -t ed25519 -C "deploy@your-vps" -f /tmp/faceit_deploy_key -N ""
+ ```
+ 
+ 2. Copy the public key (`/tmp/faceit_deploy_key.pub`) to the repository Settings → Deploy keys → Add deploy key. Give it read access.
+ 
+ 3. Add the private key (`/tmp/faceit_deploy_key`) as a repository secret named `REPO_SSH_PRIVATE_KEY`.
+ 
+ 4. Optionally, set `REPO_SSH` secret to the SSH clone URL `git@github.com:owner/repo.git` so the workflow knows to use SSH cloning.
+ 
+The workflow `.github/workflows/deploy-to-regru-ssh.yml` will, if `REPO_SSH_PRIVATE_KEY` is present, copy the private key to the server and add an SSH configuration entry so `git clone git@github.com:owner/repo.git` uses that key.
+
+Notes on secrets you may set in repository Settings → Secrets
+
+- `REPO_SSH_PRIVATE_KEY` — private key for the deploy key you added to the repository (use the private key file contents, not the public key). The workflow will copy it to the VPS into `~/.ssh/repo_deploy_key` and create an `~/.ssh/config` entry for `github.com` referencing it.
+- `REPO_SSH` — optional SSH clone URL (e.g. `git@github.com:plato1nnnnnn/faceit-ai-bot.git`). If present, the workflow will use this for server-side clone/pull; otherwise it defaults to HTTPS.
+
+Security note: the workflow copies the private key to the VPS and stores it at `~/.ssh/repo_deploy_key` on the deploy user. Remove or rotate this key if you later revoke access. As an alternative, you can create a machine user and add its deploy key only to the repository and remove it when not needed.
 
 - Add an alternative workflow to push Docker images to GitHub Container Registry and have the VPS pull images instead of building on the server.
 - Add an extra step to the workflow to run database migrations on the VPS before bringing services up.
