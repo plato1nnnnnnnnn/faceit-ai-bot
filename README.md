@@ -90,11 +90,6 @@ You said you have a VPS on Debian — below are minimal steps to prepare the ser
 
 Required GitHub repository secrets (add these in the repository Settings → Secrets):
 
-- `VPS_SSH_PRIVATE_KEY` — the private SSH key for the deploy user (keep it secret).
-- `VPS_HOST` — the IP or hostname of your VPS (e.g. `123.45.67.89`).
-- `VPS_USER` — SSH username on the VPS (e.g. `deploy`).
-- `VPS_DEPLOY_PATH` — the path on the VPS where the repository should be located (default: `/var/www/faceit-ai-bot`).
-- `VPS_SSH_PORT` — optional SSH port (defaults to `22`).
 
 Server preparation (minimum):
 
@@ -109,12 +104,9 @@ Server preparation (minimum):
 
 How the workflow works:
 
-- On push to `main` the workflow will check out the repo, load the private SSH key from GitHub Secrets and SSH to `${VPS_USER}@${VPS_HOST}`. It runs `git pull` in `${VPS_DEPLOY_PATH}` (or clones if the path is empty) and then runs `docker compose up -d --build` to build and start services.
 
 Security notes:
 
-- Use a dedicated, least-privileged deploy user rather than `root` when possible.
-- Consider restricting the SSH key to only allow from GitHub Actions IPs or use a separate CI deploy key.
 
  If you want, I can also:
  
@@ -132,19 +124,13 @@ Security notes:
  
  3. Add the private key (`/tmp/faceit_deploy_key`) as a repository secret named `REPO_SSH_PRIVATE_KEY`.
  
- 4. Optionally, set `REPO_SSH` secret to the SSH clone URL `git@github.com:owner/repo.git` so the workflow knows to use SSH cloning.
- 
-The workflow `.github/workflows/deploy-to-regru-ssh.yml` will, if `REPO_SSH_PRIVATE_KEY` is present, copy the private key to the server and add an SSH configuration entry so `git clone git@github.com:owner/repo.git` uses that key.
+4. The workflow `.github/workflows/deploy-to-regru-ssh.yml` will, if `REPO_SSH_PRIVATE_KEY` is present, copy the private key to the server and configure `~/.ssh/config` so the server uses that key when cloning `github.com`.
 
-Notes on secrets you may set in repository Settings → Secrets
+Notes:
+- The private key is stored only in GitHub Secrets and transmitted by the Actions runner to the VPS during deployment; it is placed at `~/.ssh/repo_deploy_key` on the VPS and used only for clone/pull operations.
+- If you prefer not to transmit the private key from CI to the server, you can instead add the public key to the server's `~/.ssh/authorized_keys` for a dedicated deploy user and keep the private key in the CI only.
 
-- `REPO_SSH_PRIVATE_KEY` — private key for the deploy key you added to the repository (use the private key file contents, not the public key). The workflow will copy it to the VPS into `~/.ssh/repo_deploy_key` and create an `~/.ssh/config` entry for `github.com` referencing it.
-- `REPO_SSH` — optional SSH clone URL (e.g. `git@github.com:plato1nnnnnn/faceit-ai-bot.git`). If present, the workflow will use this for server-side clone/pull; otherwise it defaults to HTTPS.
 
-Security note: the workflow copies the private key to the VPS and stores it at `~/.ssh/repo_deploy_key` on the deploy user. Remove or rotate this key if you later revoke access. As an alternative, you can create a machine user and add its deploy key only to the repository and remove it when not needed.
-
-- Add an alternative workflow to push Docker images to GitHub Container Registry and have the VPS pull images instead of building on the server.
-- Add an extra step to the workflow to run database migrations on the VPS before bringing services up.
 
 Ubuntu setup script
 
@@ -160,16 +146,12 @@ This will create the `deploy` user, install Docker and the Compose plugin, add t
 
 Ubuntu quick checklist (post-setup)
 
-- Reboot or re-login the `deploy` user so group membership takes effect, or run `newgrp docker`.
-- Firewall: allow only required ports (SSH, and HTTP/HTTPS if needed):
 
 	sudo ufw allow OpenSSH
 	sudo ufw allow 80/tcp
 	sudo ufw allow 443/tcp
 	sudo ufw enable
 
-- Reverse proxy & TLS (recommended): install nginx and certbot and configure a reverse proxy for Next.js (port 3000) and the API (port 8000), then use certbot to get LetsEncrypt certificates.
-- Security: consider disabling password authentication for SSH and keep only key-based login for the `deploy` user.
 
 
 

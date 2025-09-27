@@ -17,40 +17,28 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
 
-      - name: Copy repo deploy key to server and configure git SSH (optional)
+      - name: Copy repo deploy key to server (optional)
         if: ${{ secrets.REPO_SSH_PRIVATE_KEY != '' }}
         env:
           SSH_HOST: ${{ secrets.VPS_HOST }}
           SSH_USER: ${{ secrets.VPS_USER }}
           SSH_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
         run: |
-          echo "Transferring repo deploy key to server and configuring SSH for git@github.com"
-          # write the deploy key to a temporary file locally, then copy to the server
-          tmpkey=$(mktemp)
-          echo "${{ secrets.REPO_SSH_PRIVATE_KEY }}" > "$tmpkey"
-          chmod 600 "$tmpkey"
-          scp -P ${SSH_PORT} "$tmpkey" ${SSH_USER}@${SSH_HOST}:/tmp/repo_deploy_key
-          rm -f "$tmpkey"
-
-          # On the server, move the key to ~/.ssh/repo_deploy_key, create an ssh config entry for github.com
-          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash -lc '
-            set -e
-            mkdir -p ~/.ssh
-            mv /tmp/repo_deploy_key ~/.ssh/repo_deploy_key
-            chmod 600 ~/.ssh/repo_deploy_key
-            # ensure known_hosts has github.com's RSA/ED25519 keys
-            ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null || true
-            # add ssh config entry for github.com to use the deploy key
-            cat >> ~/.ssh/config <<'EOF'
+          echo "Transferring repo deploy key to server"
+          tmpdir=$(mktemp -d)
+          cat > "$tmpdir/repo_deploy_key" <<'KEY'
+${{ secrets.REPO_SSH_PRIVATE_KEY }}
+KEY
+          chmod 600 "$tmpdir/repo_deploy_key"
+          scp -P ${SSH_PORT} "$tmpdir/repo_deploy_key" ${SSH_USER}@${SSH_HOST}:/tmp/repo_deploy_key
+          # On the server: move key into ~/.ssh, configure ssh config for github.com and set proper permissions
+          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash -lc 'set -e; mkdir -p ~/.ssh; mv /tmp/repo_deploy_key ~/.ssh/repo_deploy_key; chmod 600 ~/.ssh/repo_deploy_key; grep -q "Host github.com" ~/.ssh/config 2>/dev/null || cat >> ~/.ssh/config <<'CFG'
 Host github.com
   HostName github.com
   IdentityFile ~/.ssh/repo_deploy_key
   IdentitiesOnly yes
-  StrictHostKeyChecking yes
-EOF
-            chmod 600 ~/.ssh/config || true
-          '
-          "
+CFG
+; chmod 600 ~/.ssh/config'"
 
       - name: Deploy on server (clone/pull + docker compose)
         env:
@@ -58,18 +46,26 @@ EOF
           SSH_USER: ${{ secrets.VPS_USER }}
           SSH_HOST: ${{ secrets.VPS_HOST }}
           SSH_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
-          REPO_SSH: ${{ secrets.REPO_SSH || '' }}
+          GITHUB_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           echo "Deploying to ${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}"
           # If REPO_SSH is set, attempt SSH clone; otherwise use HTTPS
-          CLONE_CMD=""
-          if [ -n "${REPO_SSH}" ]; then
-            # use server-side deploy key if present
-            ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash -lc 'if [ -f ~/.ssh/repo_deploy_key ]; then echo "found deploy key"; fi'" || true
-            CLONE_CMD="git clone ${REPO_SSH} ${DEPLOY_PATH}"
-          else
-            CLONE_CMD="git clone https://github.com/${{ github.repository }} ${DEPLOY_PATH}"
-          fi
-
-          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash -lc 'if [ -d "${DEPLOY_PATH}/.git" ]; then cd ${DEPLOY_PATH} && git pull; else ${CLONE_CMD}; fi; cd ${DEPLOY_PATH}; docker compose pull || true; docker compose up -d --build'"
+          # Try SSH clone on server if repo_deploy_key exists (uploaded earlier by this workflow)
+          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash -lc '
+            set -e
+            if [ -d "${DEPLOY_PATH}/.git" ]; then
+              cd "${DEPLOY_PATH}" && git pull || true
+            else
+              if [ -f ~/.ssh/repo_deploy_key ]; then
+                echo "Cloning via SSH"
+                git clone git@github.com:${GITHUB_REPO}.git "${DEPLOY_PATH}"
+              else
+                echo "Cloning via HTTPS"
+                git clone https://github.com/${GITHUB_REPO}.git "${DEPLOY_PATH}"
+              fi
+            fi
+            cd "${DEPLOY_PATH}"
+            docker compose pull || true
+            docker compose up -d --build
+          '
