@@ -153,7 +153,7 @@ async def disable_auth_dependency(request: Request):
         return
     raise HTTPException(status_code=401, detail="Unauthorized")
 
-@app.post("/payments/yookassa", response_model=PaymentResponse, dependencies=[Depends(disable_auth_dependency)])
+@app.post("/payments/yookassa", response_model=PaymentResponse)
 def create_yookassa_payment(payment: PaymentRequest):
     headers = {
         "Content-Type": "application/json",
