@@ -1,29 +1,27 @@
 import '@testing-library/jest-dom';
+import 'whatwg-fetch';
+import nock from 'nock';
 
-// For React 18+ ensure act environment is enabled to avoid deprecated warnings
-// See: https://react.dev/warnings/act-compat
-(global as any).IS_REACT_ACT_ENVIRONMENT = true;
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
-// Filter noisy deprecated-act warnings coming from react-dom test utils / act-compat.
-// Check all args for substrings to avoid formatting variations.
-const _origConsoleError = console.error.bind(console);
-console.error = (...args: any[]) => {
-	try {
-		const joined = args
-			.map((a) => {
-				try {
-					return typeof a === 'string' ? a : JSON.stringify(a);
-				} catch (e) {
-					return String(a);
-				}
-			})
-			.join(' ');
+// Настройка nock для перехвата HTTP-запросов
+beforeAll(() => {
+	nock.disableNetConnect();
+	nock.enableNetConnect('127.0.0.1'); // Разрешить локальные подключения
+});
 
-		if (joined.includes('ReactDOMTestUtils.act is deprecated') || joined.includes('act-compat') || joined.includes('react-dom/test-utils')) {
-			return;
-		}
-	} catch (e) {
-		// fall through to original
-	}
-	_origConsoleError(...args);
-};
+afterEach(() => {
+	nock.cleanAll();
+});
+
+afterAll(() => {
+	nock.restore();
+});
+
+console.log('setupTests.ts loaded');
+console.log('Matchers loaded:', typeof expect !== 'undefined' && typeof expect.extend !== 'undefined');
+console.log('TextEncoder in setupTests:', typeof global.TextEncoder);
+console.log('Global TextEncoder:', global.TextEncoder);
+console.log('Global TextDecoder:', global.TextDecoder);

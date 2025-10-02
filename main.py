@@ -1,8 +1,14 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
+import requests
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
+import logging
 
-app = FastAPI(title="Faceit AI Bot ML Service", version="0.1.0")
+app = FastAPI(title="Faceit AI Bot Service", version="0.2.0")
 
 # Configure CORS for development and production
 origins = [
@@ -24,9 +30,19 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# Load a pre-trained model (example: ResNet)
+model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+model.eval()
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
 @app.get("/")
 def root():
-    return {"message": "Faceit AI Bot AI/ML сервис работает!", "status": "healthy"}
+    return {"message": "Faceit AI Bot сервис работает!", "status": "healthy"}
 
 @app.get("/health")
 def health_check():
@@ -35,39 +51,24 @@ def health_check():
 @app.post("/analyze-demo")
 async def analyze_demo(demo: UploadFile = File(...)):
     """
-    Анализ демки CS2
+    Анализ демки CS2 с использованием модели машинного обучения
     """
     if not demo.filename.endswith('.dem'):
         return {"error": "Invalid file format. Only .dem files are supported"}
-    
-    # Симуляция анализа демки
-    # В реальной реализации здесь был бы код для парсинга и анализа демки
-    mock_analysis = {
-        "filename": demo.filename,
-        "kd_ratio": 1.24,
-        "accuracy": 68.3,
-        "rating": 7.8,
-        "matches_analyzed": 1,
-        "performance_score": 85,
-        "recommendations": [
-            "Улучшите позиционирование на карте - слишком много смертей от спины",
-            "Работайте над точностью стрельбы - много промахов по головам",
-            "Улучшите экономику - покупайте броню чаще",
-            "Больше используйте утилиты (гранаты, флешки) для поддержки команды"
-        ],
-        "map_performance": {
-            "dust2": 8.2,
-            "mirage": 6.5,
-            "inferno": 9.1
-        },
-        "weapon_stats": {
-            "ak47": {"accuracy": 72, "kills": 15},
-            "m4a4": {"accuracy": 68, "kills": 8},
-            "awp": {"accuracy": 83, "kills": 12}
+
+    # Пример обработки изображения (заменить на обработку демки)
+    try:
+        image = Image.open(demo.file)
+        input_tensor = transform(image).unsqueeze(0)
+        output = model(input_tensor)
+        _, predicted = output.max(1)
+        return {
+            "filename": demo.filename,
+            "prediction": predicted.item(),
+            "confidence": output.softmax(1).max().item(),
         }
-    }
-    
-    return mock_analysis
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/generate-training")
 async def generate_training(user_stats: dict):
@@ -125,3 +126,79 @@ async def get_voice_commands():
     return commands
 
 # TODO: добавить реальную обработку голосовых команд и интеграцию с моделями ML
+
+# Payment models
+class PaymentRequest(BaseModel):
+    amount: float
+    currency: str
+    description: str
+
+class PaymentResponse(BaseModel):
+    payment_url: str
+    status: str
+
+# YooKassa integration
+YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
+YOOKASSA_SHOP_ID = "your_shop_id"
+YOOKASSA_SECRET_KEY = "your_secret_key"
+
+# Добавляем логирование для проверки переменной окружения
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+async def disable_auth_dependency(request: Request):
+    test_env = os.getenv("TEST_ENV")
+    logger.debug(f"TEST_ENV: {test_env}")  # Логируем значение TEST_ENV
+    if test_env == "true":
+        return
+    raise HTTPException(status_code=401, detail="Unauthorized")
+
+@app.post("/payments/yookassa", response_model=PaymentResponse, dependencies=[Depends(disable_auth_dependency)])
+def create_yookassa_payment(payment: PaymentRequest):
+    headers = {
+        "Content-Type": "application/json",
+    }
+    auth = (YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY)
+    data = {
+        "amount": {
+            "value": f"{payment.amount:.2f}",
+            "currency": payment.currency,
+        },
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "http://localhost:3000/payment-success",
+        },
+        "description": payment.description,
+    }
+
+    response = requests.post(YOOKASSA_API_URL, json=data, headers=headers, auth=auth)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+    payment_data = response.json()
+    return PaymentResponse(
+        payment_url=payment_data["confirmation"]["confirmation_url"],
+        status=payment_data["status"],
+    )
+
+# SBP integration
+SBP_API_URL = "https://sbp-api.example.com/create-payment"
+SBP_TOKEN = "your_sbp_token"
+
+@app.post("/payments/sbp", response_model=PaymentResponse)
+def create_sbp_payment_stub(payment: PaymentRequest):
+    return PaymentResponse(
+        payment_url="https://example.com/sbp-payment",
+        status="pending",
+    )
+
+@app.middleware("http")
+async def log_request_middleware(request: Request, call_next):
+    logger.debug(f"Incoming request: {request.method} {request.url}")
+    response = await call_next(request)
+    logger.debug(f"Response status: {response.status_code}")
+    return response
+
+@app.get("/debug-env")
+def debug_env():
+    return {"TEST_ENV": os.getenv("TEST_ENV")}

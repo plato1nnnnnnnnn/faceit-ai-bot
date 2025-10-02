@@ -14,7 +14,7 @@ export default function DemoUpload({ onAnalysisComplete }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{textAlign: 'center'}}>
-      <input type="file" accept=".dem" />
+      <input type="file" accept=".dem" aria-label="Загрузить демо файл" />
       <div style={{marginTop: 12}}>
         <button type="submit">Загрузить и проанализировать</button>
       </div>

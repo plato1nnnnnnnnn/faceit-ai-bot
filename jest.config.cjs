@@ -1,9 +1,9 @@
 module.exports = {
-  testEnvironment: 'jsdom',
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
-  },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  testEnvironment: 'jest-environment-jsdom',
+  moduleDirectories: ['node_modules'],
+  setupFiles: ['<rootDir>/tests/setupFiles.js'],
   setupFilesAfterEnv: ['<rootDir>/tests/setupTests.ts'],
-  transformIgnorePatterns: ['/node_modules/']
+  moduleNameMapper: {
+    '^msw/node$': '<rootDir>/node_modules/msw/node',
+  },
 };
