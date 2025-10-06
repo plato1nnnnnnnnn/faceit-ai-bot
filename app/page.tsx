@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import DemoUpload from '../components/DemoUpload';
+import TeammateChat from '../src/components/TeammateChat';
+import NotificationSystem from '../src/components/NotificationSystem';
 
 export default function DemoPage() {
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -96,6 +98,9 @@ export default function DemoPage() {
           <a href={paymentUrl} target="_blank" rel="noopener noreferrer">Оплатить</a>
         </div>
       )}
+
+      <TeammateChat />
+      <NotificationSystem />
 
       <style>{`
         .page-container {

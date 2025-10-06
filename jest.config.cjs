@@ -6,4 +6,5 @@ module.exports = {
   moduleNameMapper: {
     '^msw/node$': '<rootDir>/node_modules/msw/node',
   },
+  testMatch: ['**/tests/**/*.test.js', '**/tests/**/*.test.ts', '**/tests/**/*.test.tsx'],
 };

@@ -29,7 +29,10 @@
     "app/**/*.ts",
     "app/**/*.tsx",
     "components/**/*.ts",
-    "components/**/*.tsx"
+    "components/**/*.tsx",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "tests/**/*.js"
   ],
   "exclude": [
     "node_modules"
