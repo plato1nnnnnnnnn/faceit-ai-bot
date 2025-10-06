@@ -89,4 +89,27 @@ describe("DemoPage Component", () => {
     const paymentLink = await screen.findByText(/Перейдите по ссылке для оплаты:/i);
     expect(paymentLink).toBeInTheDocument();
   });
+
+  test("handles file upload error", async () => {
+    server.use(
+      rest.post(
+        'http://localhost:8000/analyze-demo',
+        (req, res, ctx) => {
+          return res(ctx.status(500), ctx.json({ error: 'Internal Server Error' }));
+        }
+      )
+    );
+
+    render(<DemoPage />);
+
+    await act(async () => {
+      const fileInput = screen.getByLabelText(/Загрузить демо файл/i);
+      fireEvent.change(fileInput, { target: { files: [new File([], "demo.dem")] } });
+      const submitButton = screen.getByText(/Загрузить и проанализировать/i);
+      fireEvent.click(submitButton);
+    });
+
+    const errorMessage = await screen.findByText(/Произошла ошибка при анализе/i);
+    expect(errorMessage).toBeInTheDocument();
+  });
 });

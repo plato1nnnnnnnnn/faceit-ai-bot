@@ -1,10 +1,33 @@
 import React, { useState, useEffect } from 'react';
 
-const NotificationSystem = () => {
+// Стили для компонента уведомлений
+const styles = {
+  container: {
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+  },
+  list: {
+    listStyleType: 'none',
+    padding: 0,
+  },
+  listItem: {
+    background: '#f9f9f9',
+    margin: '10px 0',
+    padding: '10px',
+    borderRadius: '5px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  },
+};
+
+/**
+ * Компонент для отображения системы уведомлений.
+ * @returns JSX.Element
+ */
+const NotificationSystem: React.FC = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    // Simulate fetching notifications from an API
+    // Имитация получения уведомлений с API
     const fetchNotifications = () => {
       setTimeout(() => {
         setNotifications([
@@ -19,20 +42,11 @@ const NotificationSystem = () => {
   }, []);
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={styles.container}>
       <h2>Notifications</h2>
-      <ul style={{ listStyleType: 'none', padding: 0 }}>
+      <ul style={styles.list}>
         {notifications.map((notification) => (
-          <li
-            key={notification.id}
-            style={{
-              background: '#f9f9f9',
-              margin: '10px 0',
-              padding: '10px',
-              borderRadius: '5px',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            }}
-          >
+          <li key={notification.id} style={styles.listItem}>
             {notification.message}
           </li>
         ))}

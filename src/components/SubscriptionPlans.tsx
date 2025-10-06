@@ -1,6 +1,37 @@
 import React from 'react';
 
-const SubscriptionPlans = () => {
+// Стили для компонента подписок
+const styles = {
+  container: {
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+  },
+  plansWrapper: {
+    display: 'flex',
+    gap: '20px',
+  },
+  planCard: {
+    border: '1px solid #ccc',
+    borderRadius: '10px',
+    padding: '20px',
+    width: '200px',
+    textAlign: 'center' as const,
+  },
+  button: {
+    padding: '10px 20px',
+    backgroundColor: '#007BFF',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+  },
+};
+
+/**
+ * Компонент для отображения планов подписки.
+ * @returns JSX.Element
+ */
+const SubscriptionPlans: React.FC = () => {
   const plans = [
     { level: 'Basic', price: 10, features: ['Feature 1', 'Feature 2'] },
     { level: 'Pro', price: 20, features: ['Feature 1', 'Feature 2', 'Feature 3'] },
@@ -8,20 +39,11 @@ const SubscriptionPlans = () => {
   ];
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={styles.container}>
       <h1>Подписки</h1>
-      <div style={{ display: 'flex', gap: '20px' }}>
+      <div style={styles.plansWrapper}>
         {plans.map((plan) => (
-          <div
-            key={plan.level}
-            style={{
-              border: '1px solid #ccc',
-              borderRadius: '10px',
-              padding: '20px',
-              width: '200px',
-              textAlign: 'center',
-            }}
-          >
+          <div key={plan.level} style={styles.planCard}>
             <h2>{plan.level}</h2>
             <p>Цена: ${plan.price}/мес</p>
             <ul>
@@ -29,18 +51,7 @@ const SubscriptionPlans = () => {
                 <li key={index}>{feature}</li>
               ))}
             </ul>
-            <button
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007BFF',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-            >
-              Выбрать
-            </button>
+            <button style={styles.button}>Выбрать</button>
           </div>
         ))}
       </div>

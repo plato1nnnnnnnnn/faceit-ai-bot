@@ -1,20 +1,34 @@
-// Реализация переключателя тёмного режима
+/**
+ * Переключает тёмный режим на странице.
+ * Сохраняет состояние в localStorage.
+ */
 export function toggleDarkMode() {
   const body = document.body;
   body.classList.toggle('dark-mode');
 
-  // Сохранение состояния в localStorage
-  if (body.classList.contains('dark-mode')) {
-    localStorage.setItem('theme', 'dark');
-  } else {
-    localStorage.setItem('theme', 'light');
+  try {
+    // Сохранение состояния в localStorage
+    if (body.classList.contains('dark-mode')) {
+      localStorage.setItem('theme', 'dark');
+    } else {
+      localStorage.setItem('theme', 'light');
+    }
+  } catch (error) {
+    console.error('Ошибка при сохранении темы в localStorage:', error);
   }
 }
 
-// Установка темы при загрузке страницы
+/**
+ * Инициализирует тёмный режим при загрузке страницы.
+ * Устанавливает тему на основе сохранённого состояния в localStorage.
+ */
 export function initializeDarkMode() {
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark-mode');
+  try {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+  } catch (error) {
+    console.error('Ошибка при инициализации темы из localStorage:', error);
   }
 }

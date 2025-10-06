@@ -1,12 +1,12 @@
 const { Sequelize } = require('sequelize');
 
-// Initialize Sequelize with SQLite for simplicity
+// Инициализация Sequelize с использованием SQLite
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: './database.sqlite',
 });
 
-// Define User model
+// Определение модели пользователя
 const User = sequelize.define('User', {
   username: {
     type: Sequelize.STRING,
@@ -23,7 +23,7 @@ const User = sequelize.define('User', {
   },
 });
 
-// Define Subscription model
+// Определение модели подписки
 const Subscription = sequelize.define('Subscription', {
   level: {
     type: Sequelize.STRING,
@@ -35,13 +35,18 @@ const Subscription = sequelize.define('Subscription', {
   },
 });
 
-// Relationships
+// Установление связей между моделями
 User.hasOne(Subscription);
 Subscription.belongsTo(User);
 
-// Sync database
-sequelize.sync({ force: true }).then(() => {
-  console.log('Database & tables created!');
-});
+// Синхронизация базы данных
+(async () => {
+  try {
+    await sequelize.sync(); // Убрано force: true для предотвращения потери данных
+    console.log('База данных и таблицы успешно созданы!');
+  } catch (error) {
+    console.error('Ошибка при синхронизации базы данных:', error.message || error);
+  }
+})();
 
 module.exports = { sequelize, User, Subscription };

@@ -1,7 +1,10 @@
 const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs');
 
-// Загрузка данных из файла
+/**
+ * Загружает данные для обучения из файла.
+ * @returns {Object} Объект с входными и выходными данными.
+ */
 function loadTrainingData() {
   const rawData = fs.readFileSync('user_data.json', 'utf-8').split('\n').filter(Boolean);
   const parsedData = rawData.map((line) => JSON.parse(line));
@@ -16,7 +19,9 @@ const { inputs, outputs } = loadTrainingData();
 const trainingData = tf.tensor2d(inputs);
 const outputData = tf.tensor2d(outputs);
 
-// Создание модели
+/**
+ * Создает и обучает модель TensorFlow.
+ */
 async function trainModel() {
   const model = tf.sequential();
 
@@ -38,19 +43,23 @@ async function trainModel() {
 
   console.log('Начало обучения модели...');
 
-  await model.fit(trainingData, outputData, {
-    epochs: 100,
-    callbacks: {
-      onEpochEnd: (epoch, logs) => {
-        console.log(`Эпоха ${epoch + 1}: Потери = ${logs.loss}`);
+  try {
+    await model.fit(trainingData, outputData, {
+      epochs: 100,
+      callbacks: {
+        onEpochEnd: (epoch, logs) => {
+          console.log(`Эпоха ${epoch + 1}: Потери = ${logs.loss}`);
+        },
       },
-    },
-  });
+    });
 
-  console.log('Обучение завершено.');
+    console.log('Обучение завершено.');
 
-  // Сохранение модели
-  await model.save('file://./model');
+    // Сохранение модели
+    await model.save('file://./model');
+  } catch (error) {
+    console.error('Ошибка при обучении модели:', error.message || error);
+  }
 }
 
 trainModel().catch(console.error);

@@ -1,7 +1,48 @@
 import React, { useState } from 'react';
 
-const TeammateChat = () => {
-  const [messages, setMessages] = useState([]);
+// Стили для компонента чата
+const styles = {
+  container: {
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+  },
+  chatBox: {
+    border: '1px solid #ccc',
+    borderRadius: '10px',
+    padding: '10px',
+    height: '300px',
+    overflowY: 'scroll' as const,
+    marginBottom: '10px',
+  },
+  message: {
+    marginBottom: '5px',
+  },
+  inputWrapper: {
+    display: 'flex',
+    gap: '10px',
+  },
+  input: {
+    flex: 1,
+    padding: '10px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
+  },
+  button: {
+    padding: '10px 20px',
+    borderRadius: '5px',
+    backgroundColor: '#007BFF',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+  },
+};
+
+/**
+ * Компонент для чата с товарищами по команде.
+ * @returns JSX.Element
+ */
+const TeammateChat: React.FC = () => {
+  const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
   const [input, setInput] = useState('');
 
   const handleSendMessage = () => {
@@ -12,35 +53,23 @@ const TeammateChat = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={styles.container}>
       <h2>Teammate Chat</h2>
-      <div
-        style={{
-          border: '1px solid #ccc',
-          borderRadius: '10px',
-          padding: '10px',
-          height: '300px',
-          overflowY: 'scroll',
-          marginBottom: '10px',
-        }}
-      >
+      <div style={styles.chatBox}>
         {messages.map((message, index) => (
-          <div key={index} style={{ marginBottom: '5px' }}>
+          <div key={index} style={styles.message}>
             <strong>{message.sender}:</strong> {message.text}
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={styles.inputWrapper}>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+          style={styles.input}
         />
-        <button
-          onClick={handleSendMessage}
-          style={{ padding: '10px 20px', borderRadius: '5px', backgroundColor: '#007BFF', color: 'white', border: 'none' }}
-        >
+        <button onClick={handleSendMessage} style={styles.button}>
           Send
         </button>
       </div>

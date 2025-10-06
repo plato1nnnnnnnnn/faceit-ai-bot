@@ -1,23 +1,40 @@
 const tf = require('@tensorflow/tfjs-node');
 
-// Загрузка обученной модели
+/**
+ * Загружает обученную модель TensorFlow.
+ * @returns {Promise<Object>} Объект модели.
+ */
 async function loadTrainedModel() {
-  const model = await tf.loadLayersModel('file://./model/model.json');
-  return model;
+  try {
+    const model = await tf.loadLayersModel('file://./model/model.json');
+    return model;
+  } catch (error) {
+    console.error('Ошибка при загрузке модели:', error.message || error);
+    throw new Error('Не удалось загрузить модель.');
+  }
 }
 
-// Анализ данных с использованием модели
+/**
+ * Анализирует данные с использованием обученной модели.
+ * @param {Array<number>} inputData - Входные данные для анализа.
+ * @returns {Array<number>} Результаты предсказания.
+ */
 async function analyzeDemoData(inputData) {
-  const model = await loadTrainedModel();
+  try {
+    const model = await loadTrainedModel();
 
-  // Преобразование входных данных в тензор
-  const tensor = tf.tensor2d(inputData, [1, inputData.length]);
+    // Преобразование входных данных в тензор
+    const tensor = tf.tensor2d(inputData, [1, inputData.length]);
 
-  // Получение предсказания
-  const prediction = model.predict(tensor);
-  const result = prediction.dataSync();
+    // Получение предсказания
+    const prediction = model.predict(tensor);
+    const result = prediction.dataSync();
 
-  return result;
+    return Array.from(result);
+  } catch (error) {
+    console.error('Ошибка при анализе данных:', error.message || error);
+    return [];
+  }
 }
 
 module.exports = { analyzeDemoData };

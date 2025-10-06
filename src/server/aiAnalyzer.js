@@ -2,25 +2,35 @@
 const { User, Subscription } = require('./database');
 const { generateResponse } = require('./gptService');
 
-// Имитация анализа: в реальном проекте подключается ML-модель или внешний сервис
+/**
+ * Анализ данных пользователя с использованием GPT.
+ * @param {number} userId - Идентификатор пользователя.
+ * @returns {Object} Результаты анализа или сообщение об ошибке.
+ */
 async function analyzeUser(userId) {
-  const user = await User.findByPk(userId, { include: Subscription });
-  if (!user) return { error: 'Пользователь не найден' };
+  try {
+    const user = await User.findByPk(userId, { include: Subscription });
+    if (!user) {
+      return { error: 'Пользователь не найден' };
+    }
 
-  // Пример данных для анализа
-  const prompt = `Пользователь: ${user.username}, Подписка: ${user.Subscription ? user.Subscription.level : 'Нет'}, ID: ${user.id}`;
+    const subscriptionLevel = user.Subscription?.level || 'Нет';
+    const prompt = `Пользователь: ${user.username}, Подписка: ${subscriptionLevel}, ID: ${user.id}`;
 
-  // Вызов GPT для анализа
-  const gptResponse = await generateResponse(prompt);
+    const gptResponse = await generateResponse(prompt);
 
-  return {
-    user: user.username,
-    recommendations: [gptResponse],
-    stats: {
-      gamesAnalyzed: Math.floor(Math.random() * 100),
-      winRate: (Math.random() * 100).toFixed(2) + '%',
-    },
-  };
+    return {
+      user: user.username,
+      recommendations: [gptResponse],
+      stats: {
+        gamesAnalyzed: Math.floor(Math.random() * 100),
+        winRate: `${(Math.random() * 100).toFixed(2)}%`,
+      },
+    };
+  } catch (error) {
+    console.error('Ошибка при анализе пользователя:', error.message || error);
+    return { error: 'Произошла ошибка при анализе данных пользователя.' };
+  }
 }
 
 module.exports = { analyzeUser };

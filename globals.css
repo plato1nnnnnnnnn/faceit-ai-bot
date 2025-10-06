@@ -162,6 +162,24 @@ body {
 }
 
 @media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  .navigation {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
   .main-title {
     font-size: 2.5rem;
   }

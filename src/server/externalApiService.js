@@ -1,34 +1,40 @@
 const axios = require('axios');
 
-// Пример интеграции с внешним API игровой платформы
-async function fetchPlayerData(playerId) {
+/**
+ * Выполняет запрос к внешнему API.
+ * @param {string} endpoint - URL конечной точки API.
+ * @returns {Object|null} Данные ответа или null в случае ошибки.
+ */
+async function makeApiRequest(endpoint) {
   try {
-    const response = await axios.get(`https://api.example.com/players/${playerId}`, {
+    const response = await axios.get(endpoint, {
       headers: {
         Authorization: `Bearer ${process.env.GAME_API_KEY}`,
       },
     });
-
     return response.data;
   } catch (error) {
-    console.error('Ошибка при запросе данных игрока:', error);
+    console.error(`Ошибка при запросе к API (${endpoint}):`, error.response?.status, error.message || error);
     return null;
   }
 }
 
-async function fetchGameStats(gameId) {
-  try {
-    const response = await axios.get(`https://api.example.com/games/${gameId}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.GAME_API_KEY}`,
-      },
-    });
+/**
+ * Получает данные игрока по его идентификатору.
+ * @param {string} playerId - Идентификатор игрока.
+ * @returns {Object|null} Данные игрока или null в случае ошибки.
+ */
+async function fetchPlayerData(playerId) {
+  return await makeApiRequest(`https://api.example.com/players/${playerId}`);
+}
 
-    return response.data;
-  } catch (error) {
-    console.error('Ошибка при запросе статистики игры:', error);
-    return null;
-  }
+/**
+ * Получает статистику игры по её идентификатору.
+ * @param {string} gameId - Идентификатор игры.
+ * @returns {Object|null} Данные статистики или null в случае ошибки.
+ */
+async function fetchGameStats(gameId) {
+  return await makeApiRequest(`https://api.example.com/games/${gameId}`);
 }
 
 module.exports = { fetchPlayerData, fetchGameStats };

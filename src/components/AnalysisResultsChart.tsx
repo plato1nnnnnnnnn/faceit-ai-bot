@@ -11,6 +11,7 @@ import {
   Legend,
 } from 'chart.js';
 
+// Регистрация модулей Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -21,15 +22,26 @@ ChartJS.register(
   Legend
 );
 
+/**
+ * Интерфейс для элемента данных графика.
+ */
 interface DataItem {
   label: string;
   value: number;
 }
 
+/**
+ * Свойства компонента AnalysisResultsChart.
+ */
 interface AnalysisResultsChartProps {
   data: DataItem[];
 }
 
+/**
+ * Компонент для отображения графика результатов анализа.
+ * @param {AnalysisResultsChartProps} props - Свойства компонента.
+ * @returns JSX.Element
+ */
 const AnalysisResultsChart: React.FC<AnalysisResultsChartProps> = ({ data }) => {
   const chartData = {
     labels: data.map((item) => item.label),
