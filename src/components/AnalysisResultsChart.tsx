@@ -21,7 +21,16 @@ ChartJS.register(
   Legend
 );
 
-const AnalysisResultsChart = ({ data }) => {
+interface DataItem {
+  label: string;
+  value: number;
+}
+
+interface AnalysisResultsChartProps {
+  data: DataItem[];
+}
+
+const AnalysisResultsChart: React.FC<AnalysisResultsChartProps> = ({ data }) => {
   const chartData = {
     labels: data.map((item) => item.label),
     datasets: [
@@ -38,7 +47,7 @@ const AnalysisResultsChart = ({ data }) => {
     responsive: true,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'top' as const, // Указываем строгое значение
       },
       title: {
         display: true,

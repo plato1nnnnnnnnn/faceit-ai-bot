@@ -32,7 +32,9 @@
     "components/**/*.tsx",
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    "tests/**/*.js"
+    "tests/**/*.js",
+    "node_modules/react-chartjs-2",
+    "node_modules/chart.js"
   ],
   "exclude": [
     "node_modules"
